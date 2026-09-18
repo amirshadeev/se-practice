@@ -31,8 +31,7 @@ accuracy, testing and integrity of everything you submit, including everything a
 | Tool | Used for | Which file or section |
 | --- | --- | --- |
 | | e.g. wording the conclusion, writing the runner for a non-Python language | |
-| ChatGPT | Helped improve the wording of the conclusion | lab-report.md, Section 8 |
-Writing your own text with an AI is permitted at Level D **and must be declared here.**
+Level D **and must be declared here.**
 
 ## 4. Declarations
 
