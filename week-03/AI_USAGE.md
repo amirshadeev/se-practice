@@ -6,22 +6,22 @@ everything you submit, including everything an AI tool produced.
 
 | Tool | Exact model + version | Used for | Which files it touched |
 | --- | --- | --- | --- |
-| TODO | TODO | Prompt 1 — user stories | `requirements/user-stories.md` |
-| | | Prompt 2 — acceptance criteria | `requirements/acceptance-criteria.md` |
-| | | Prompt 3 — use-case diagram | `requirements/use-cases.puml` |
+| Google Gemini | Gemini 3.6 Flash | Prompt 1 — user stories | `requirements/user-stories.md` |
+| Google Gemini | Gemini 3.6 Flash | Prompt 2 — acceptance criteria | `requirements/acceptance-criteria.md` |
+| Google Gemini | Gemini 3.6 Flash | Prompt 3 — use-case diagram | `requirements/use-cases.puml` |
 
-**One tool and one model for all three prompts:** yes / no
+**One tool and one model for all three prompts:** yes
 <!-- If "no", say which prompt used what. -->
 
 **Did you use AI for anything beyond the three verbatim prompts** — rewriting your review, writing
 the traceability table, drafting the conclusion? Name it. This is allowed and disclosed, not hidden.
+Yes. I also used AI to validate generated requirements against the scenario and business rules, identify scope creep, adjust traceability mapping, and compile sections 5, 8, and 10 of the lab-report.md file.
 
-<!-- answer here -->
 
-**Everything I submitted, I can explain and defend in class:** yes / no
+**Everything I submitted, I can explain and defend in class:** yes 
 
 **Anything I accepted from the AI without fully understanding it:**
-<!-- Name the file and the part. An honest answer costs nothing. -->
+None. I reviewed the generated user stories, acceptance criteria, PlantUML diagram, traceability, and final report before submission.
 
-Signed:
-Date:
+Signed: Amir Shadeyev
+Date:26.09.2026

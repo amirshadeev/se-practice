@@ -5,7 +5,7 @@ missing heading reads as a missing section.
 
 Name:Amir Shadeyev
 Student ID:24B030322
-GitHub username:
+GitHub username: amirshadeev
 
 ---
 
@@ -16,7 +16,7 @@ GitHub username:
 | AI assistant (tool) | Google Gemini |
 | Exact model name and version | Gemini 3.6 Flash 
 | Date of the session | 26.09.2026 |
-| Diagram renderer used | |
+| Diagram renderer used | PlantUML Online Editor (editor.plantuml.com) |
 
 One tool and one model for all three prompts. If you switched, say why here — it changes what your
 findings mean.
@@ -411,17 +411,47 @@ Shape is clean. This says nothing about whether the requirements are good.
 
 ```
 $ python tests/validate_submission.py
-(paste)
+submission.yml — submission.yml
+------------------------------------------------------------------------
+PASS   schema                                    1
+PASS   week                                      03
+PASS   student.name                              Amir Shadeyev
+PASS   student.student_id                        24B030322
+PASS   student.github                            amirshadeev
+PASS   assistant.tool                            Google Gemini
+PASS   assistant.model                           Gemini 3.6 Flash
+PASS   counts.user_stories                       7
+PASS   counts.acceptance_criteria_sets           3
+PASS   checker                                   23 PASS · 0 FAIL ·0 ERROR
+NOTE   checker                                   you are claiming aclean run — it will be re-run at your commit, so make sure it is true
+PASS   checker.commit                            682ba35
+PASS   assumptions.overlap_touching_bookings     not-allowed
+PASS   assumptions.exactly_two_hours             allowed
+PASS   traceability.use_cases_not_covered        []
+PASS   traceability.stories_not_traced           []
+NOTE   traceability                              you are claiming full coverage in both directions — that is rare on a first pass, and it is checked
+PASS   review_findings                           3 findings
+PASS   review_findings[1]                        US-01: The generated assumption added half-hour or one-hour …
+PASS   review_findings[2]                        US-03: The generated assumption introduced active or future …
+PASS   review_findings[3]                        UC-06: I reviewed the confirmation association and kept Send…
+PASS   honesty.can_explain_everything_submitted  yes
+PASS   honesty.ai_usage_disclosed                yes
+------------------------------------------------------------------------
+21 PASS · 0 FAIL · 0 ERROR · 2 note
+Shape is fine. This says nothing about whether the work is good.
 ```
 
 | | PASS | FAIL | ERROR |
 | --- | --- | --- | --- |
-| `check_requirements.py` | | | |
+| `check_requirements.py` | 23 | 0 | 0 |
 
 Commit these numbers were produced at (`git rev-parse --short HEAD`):
+The final checker run was made at commit:
+682ba35
 
 **Every FAIL, one line each: what it is and what you decided to do about it.** A FAIL you report and
 explain costs you nothing.
+There were no FAIL results in either checker.
 
 **Did you run the checks by hand instead of with Python?** Say so here — it costs nothing, but it
 has to be said.
@@ -434,9 +464,12 @@ Answer all three:
 
 1. Which part of the generated requirements was most wrong, and how would you have caught it without
    a checker?
+The most wrong part of the generated requirements was the assumptions added to the user stories and acceptance criteria. For example, US-01 introduced half-hour or one-hour booking slots and standard operating hours, although these were not in the scenario. Other generated criteria introduced active or future reservation states and automatic cancellation of bookings. Without a checker, I would have caught these issues by comparing every generated requirement with the original actors, six use cases, four business rules, and out-of-scope list. This manual scope review was necessary because the checker only tests structure and consistency.
 2. What did the assistant get right that would have taken you noticeably longer by hand?
+The assistant was most useful for creating the first complete draft quickly. It generated seven user stories, acceptance criteria in Given/When/Then format, and the PlantUML diagram with the required actors and six use cases. Writing and organizing all of these from scratch would have taken noticeably longer.
 3. You are handing these requirements to someone who will implement them, and you will not be in the
    room. Which single one would you rewrite first, and why?
+I would rewrite US-03 (Cancel a booking) first before handing the requirements to an implementer. The final story still depends on the assumption that a Student can cancel only a reservation they made, while the scenario does not define cancellation timing or behavior for expired bookings. Clarifying this would prevent an implementer from making their own business-rule decisions.
 
 Be specific. "The AI was useful" is worth nothing; "UC-06 had no story behind it until I wrote
 US-07, and the checker is what told me" is worth everything.
