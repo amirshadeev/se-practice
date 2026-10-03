@@ -1,0 +1,60 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Student {
+  - studentId : String
+  - name : String
+  - email : String
+  + viewAvailableRooms(startTime : DateTime, durationMinutes : int) : List<Room>
+  + bookRoom(room : Room, startTime : DateTime, durationMinutes : int) : Booking
+  + cancelBooking(booking : Booking) : boolean
+}
+
+class Room {
+  - roomId : String
+  - roomName : String
+  - isBlocked : boolean
+  + checkAvailability(startTime : DateTime, durationMinutes : int) : boolean
+  + block() : void
+  + unblock() : void
+}
+
+class Booking {
+  - bookingId : String
+  - startTime : DateTime
+  - endTime : DateTime
+  - status : BookingStatus
+  + isValidDuration() : boolean
+  + overlapsWith(startTime : DateTime, endTime : DateTime) : boolean
+  + confirm() : Confirmation
+  + cancel() : void
+}
+
+class Administrator {
+  - adminId : String
+  - name : String
+  + blockRoom(room : Room) : void
+  + unblockRoom(room : Room) : void
+  + reviewUsage(startDate : Date, endDate : Date) : List<Booking>
+}
+
+class Confirmation {
+  - confirmationId : String
+  - issuedAt : DateTime
+  - message : String
+  - actionType : String
+}
+
+enum BookingStatus {
+  ACTIVE
+  CANCELLED
+}
+
+' Relationships & Multiplicities
+Student "1" -- "0..*" Booking : creates >
+Room "1" -- "0..*" Booking : holds >
+Administrator "0..*" -- "0..*" Room : manages >
+Booking "1" --> "1" Confirmation : generates >
+Booking "1" *-- "1" BookingStatus : state
+
+@enduml

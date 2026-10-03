@@ -1,0 +1,40 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Student" as student
+actor "Administrator" as admin
+
+rectangle "Smart Campus System" {
+
+  usecase "View Available Rooms" as UC_View
+  usecase "Book Room" as UC_Book
+  usecase "Cancel Booking" as UC_Cancel
+  usecase "Send Confirmation" as UC_Confirm
+  usecase "Block Room" as UC_Block
+  usecase "Unblock Room" as UC_Unblock
+  usecase "Review Room Usage" as UC_Review
+
+  student -- UC_View
+  student -- UC_Book
+  student -- UC_Cancel
+
+  admin -- UC_Block
+  admin -- UC_Unblock
+  admin -- UC_Review
+
+  ' why: a successful booking produces a confirmation according to R4
+  UC_Book .> UC_Confirm : <<include>>
+
+  ' why: the approved story requires confirmation after a cancellation
+  UC_Cancel .> UC_Confirm : <<include>>
+}
+
+note right of UC_Book
+R1: Future start, duration > 0 and <= 2 hours
+R2: Active bookings for the same room cannot overlap
+R3: Blocked room cannot accept a new booking
+R4: Successful booking produces a confirmation
+end note
+
+@enduml

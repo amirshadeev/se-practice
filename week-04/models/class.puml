@@ -1,0 +1,55 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Student {
+  - studentId : String
+  - name : String
+  + viewAvailableRooms(startTime : DateTime, durationMinutes : int) : List<Room>
+  + bookRoom(room : Room, startTime : DateTime, durationMinutes : int) : Booking
+  + cancelBooking(booking : Booking) : void
+}
+
+class Room {
+  - roomId : String
+  - roomName : String
+  - isBlocked : boolean
+  + checkAvailability(startTime : DateTime, durationMinutes : int) : boolean
+  + block() : void
+  + unblock() : void
+}
+
+class Booking {
+  - bookingId : String
+  - startTime : DateTime
+  - endTime : DateTime
+  - status : String
+  + isValidDuration() : boolean
+  + overlapsWith(other : Booking) : boolean
+  + cancel() : void
+}
+
+class Administrator {
+  - adminId : String
+  - name : String
+  + blockRoom(room : Room) : void
+  + unblockRoom(room : Room) : void
+  + reviewUsage(startDate : Date, endDate : Date) : List<Booking>
+}
+
+Student "1" -- "0..*" Booking : makes
+Room "1" -- "0..*" Booking : has
+Administrator "0..*" -- "0..*" Room : manages
+
+note right of Booking
+R1: startTime is in the future.
+Duration is greater than 0
+and at most 2 hours.
+
+R2: Active bookings for the
+same room cannot overlap.
+
+R3: A blocked room cannot
+accept a new booking.
+end note
+
+@enduml
