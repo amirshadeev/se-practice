@@ -61,3 +61,34 @@ class BookingTests(unittest.TestCase):
 
         self.assertIs(result, True)
         self.assertEqual(existing, original)
+    def test_negative_start_is_rejected(self):
+        result = can_book(-1, 100, 0, False, [])
+        self.assertIs(result, False)
+
+    def test_end_after_1440_is_rejected(self):
+        result = can_book(1320, 1441, 1200, False, [])
+        self.assertIs(result, False)
+
+    def test_partial_overlap_at_end_is_rejected(self):
+        result = can_book(650, 700, 540, False, [(600, 660)])
+        self.assertIs(result, False)
+
+    def test_partial_overlap_at_start_is_rejected(self):
+        result = can_book(550, 610, 540, False, [(600, 660)])
+        self.assertIs(result, False)
+
+    def test_request_contains_existing_booking_is_rejected(self):
+        result = can_book(570, 690, 540, False, [(600, 660)])
+        self.assertIs(result, False)
+
+    def test_second_existing_booking_is_checked(self):
+        result = can_book(720, 750, 540, False, [(600, 660), (700, 740)])
+        self.assertIs(result, False)
+
+    def test_touching_start_is_allowed(self):
+        result = can_book(540, 600, 500, False, [(600, 660)])
+        self.assertIs(result, True)
+
+    def test_result_is_boolean(self):
+        result = can_book(660, 720, 540, False, [(600, 660)])
+        self.assertIs(type(result), bool)
