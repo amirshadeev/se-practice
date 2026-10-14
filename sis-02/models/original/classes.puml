@@ -1,0 +1,43 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Student {
+    - studentId: String
+    - name: String
+    - email: String
+    + getStudentId(): String
+}
+
+class Course {
+    - courseId: String
+    - title: String
+    - capacity: int
+    - currentEnrollmentCount: int
+    + isFull(): boolean
+    + incrementEnrollment(): void
+}
+
+class Enrollment {
+    - enrollmentId: String
+    - registrationDate: DateTime
+    - status: EnrollmentStatus
+    + confirm(): void
+}
+
+class Catalog {
+    - catalogId: String
+    - semester: String
+    + getCourses(): List<Course>
+}
+
+Catalog "1" o-- "0..*" Course : contains >
+Student "1" -- "0..*" Enrollment : makes >
+Course "1" -- "0..*" Enrollment : receives >
+
+note "{Capacity Constraint}\nCourse.currentEnrollmentCount <= Course.capacity" as N1
+Course .. N1
+
+note "{Uniqueness Constraint}\nUnique composite key: (studentId, courseId)\nPrevents duplicate active enrollments." as N2
+Enrollment .. N2
+
+@enduml
