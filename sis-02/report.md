@@ -32,24 +32,24 @@
 
 ### US-01 — Browse offerings
 
-**US-01:** (write here — As a student, I want …, so that …)
+**US-01:** As a signed-in student, I want to browse course offerings for a semester, so that I can see course codes, titles, offerings, and available places.
 
-- **AC-01** (R?): (write here — Given …, When …, Then …)
-- **AC-02** (R?): (write here)
+- **AC-01** (R1): Given the student is signed in and opens the catalog for a semester, When the catalog loads, Then the system shows the course code, title, offering, and available places.
+- **AC-02** (R2): Given the student is viewing an offering in the catalog, When the student views its available places without submitting a registration request, Then no place is reserved for the student.
 
 ### US-02 — Register for an offering
 
-**US-02:** (write here)
+**US-02:** As a signed-in student, I want to register for an offering with available places, so that I can enroll and receive confirmation.
 
-- **AC-03** (R?): (write here)
-- **AC-04** (R?): (write here)
+- **AC-03** (R2, R4): Given the student is signed in and an existing offering has available places, When the student requests registration and the current availability is verified, Then the system creates exactly one Enrollment linking the student and offering, updates the available places count, and returns confirmation.
+- **AC-04** (R2, R4): Given multiple students request the last available place at the same time, When the system performs the final availability checks and creates an enrollment, Then these actions execute atomically so that the capacity cannot be exceeded.
 
 ### US-03 — Receive a clear rejection
 
-**US-03:** (write here)
+**US-03:** As a signed-in student, I want to receive a clear reason when registration is rejected, so that I understand why I could not enroll and my enrollment status remains unchanged.
 
-- **AC-05** (R?): (write here)
-- **AC-06** (R?): (write here)
+- **AC-05** (R2, R5): Given an offering has no available places, When the student requests registration and the system rechecks availability, Then the system rejects the request with the reason "course full", creates no Enrollment, and leaves the enrollment count unchanged.
+- **AC-06** (R3, R5): Given the student is already enrolled in the target offering, When the student requests registration for that same offering again, Then the system rejects the request with the reason "already enrolled", creates no Enrollment, and leaves the enrollment count unchanged.
 
 ## 3. Sequence diagram
 
@@ -163,9 +163,9 @@
 
 ### B1 — Requirements (Prompt A)
 
-- **Tool:** (write here)
-- **Model:** (write here)
-- **Date:** (write here)
+- **Tool:** Gemini
+- **Model:** Gemini 3.6 Flash
+- **Date:** 2026-10-15
 - **Purpose:** draft 3 user stories and 6 acceptance criteria
 
 <!-- Model: the exact model with its version, as the tool shows it (e.g. "GPT-5 Thinking",
@@ -175,13 +175,125 @@
 **Prompt:**
 
 ~~~~text
-(paste here)
+Act as a requirements analyst. Use only this course registration scenario and rules R1–R5: 
+
+A student browses an electronic course catalog, chooses a course offering and requests registration. Each offering has a limited number of places.
+
+A Course describes a subject. A CourseOffering is one scheduled section in one semester. Registration always targets a specific offering.
+
+Assume that the student is signed in, the selected offering exists, and its capacity is a positive whole number.
+
+R1. Catalog: Show the course code, title, offering and available places for one semester.
+
+R2. Capacity: Recheck current availability when registering. Enrollment must never exceed the offering's capacity.
+
+R3. Duplicates: A student may have at most one enrollment in the same offering. Reject a repeat request.
+
+R4. Success: Create exactly one Enrollment linking the student and offering, update availability and return a confirmation.
+
+R5. Rejection: Explain "course full" or "already enrolled". Create no enrollment and leave the enrollment count unchanged.
+
+These rules define this assignment. A catalog view does not reserve a place. Model the final checks and enrollment creation as one atomic operation so competing requests cannot take the same last place. A note describing the atomic operation is sufficient; database implementation is outside this assignment.
+
+Exclude payments, prerequisites, timetable clashes, waiting lists and cancellation. Use fictional students and courses.
+
+My initial assumptions are:
+1. The student is already signed in, and the selected course offering exists in the system.
+2. Each course offering has a positive integer capacity, and the system can determine the current number of enrolled students.
+
+Draft 3 user stories and 2 Given / When / Then acceptance criteria for each. Use IDs US-01 to US-03 and AC-01 to AC-06. Map each criterion to rule IDs.
+Cover normal and rejection behavior. List uncertainty separately. Do not add excluded features or invent university policies.
 ~~~~
 
 **Response:**
 
 ~~~~text
-(paste here)
+Here is the requirements analysis, structured into user stories, acceptance criteria mapped to the rules, and a separate list of uncertainties based strictly on your scenario and rules.
+
+---
+
+## User Stories & Acceptance Criteria
+
+### US-01: Course Catalog Browsing
+
+**As a** signed-in student,
+
+**I want to** browse the electronic course catalog for a specific semester,
+
+**So that I can** view course codes, titles, available offerings, and their current available places.
+
+* **AC-01: Display Catalog Information**
+* **Given** the student is signed in and opens the electronic course catalog for a semester,
+* **When** the catalog page loads,
+* **Then** the system shows the course code, title, offering, and available places for one semester.
+* **Rule Mapping:** R1
+
+
+* **AC-02: Non-Reservation Nature of Catalog View**
+* **Given** a student is viewing the available places for a course offering in the catalog,
+* **When** the student browses or views the catalog details without submitting a registration request,
+* **Then** no place is reserved or held for the student.
+* **Rule Mapping:** R1 (Scenario Constraint)
+
+
+
+---
+
+### US-02: Successful Course Registration
+
+**As a** signed-in student,
+
+**I want to** request registration for an existing course offering with available places,
+
+**So that** I am successfully enrolled and receive a confirmation.
+
+* **AC-03: Successful Enrollment Creation**
+* **Given** a student is signed in and selects an existing course offering with a positive number of available places,
+* **When** the student requests registration and availability is successfully verified,
+* **Then** the system creates exactly one Enrollment linking the student and offering, updates the available places count, and returns a confirmation.
+* **Rule Mapping:** R2, R4
+
+
+* **AC-04: Atomic Operation for Competing Requests**
+* **Given** multiple students simultaneously request registration for the last remaining place in a course offering,
+* **When** the system executes the final availability rechecks and enrollment creation,
+* **Then** the process executes as a single atomic operation so that competing requests cannot take the same last place.
+* **Rule Mapping:** R2, R4
+
+
+
+---
+
+### US-03: Registration Rejections
+
+**As a** signed-in student,
+
+**I want the system to** reject my registration request if the course is full or if I am already enrolled,
+
+**So that I receive** a clear explanation and my enrollment status remains unchanged.
+
+* **AC-05: Rejection Due to Full Capacity ("Course Full")**
+* **Given** a student requests registration for an offering where the enrollment count equals or exceeds capacity,
+* **When** the system rechecks availability during the atomic registration request,
+* **Then** the system rejects the request, explains "course full", creates no enrollment, and leaves the enrollment count unchanged.
+* **Rule Mapping:** R2, R5
+
+
+* **AC-06: Rejection Due to Duplicate Enrollment ("Already Enrolled")**
+* **Given** a student already has an existing enrollment in the target course offering,
+* **When** the student submits another registration request for the same offering,
+* **Then** the system rejects the request, explains "already enrolled", creates no enrollment, and leaves the enrollment count unchanged.
+* **Rule Mapping:** R3, R5
+
+
+
+---
+
+## Uncertainties and Ambiguities
+
+* **Confirmation Format:** Rule R4 mandates returning a "confirmation" upon success, but does not define its specific delivery mechanism (e.g., UI banner, modal dialog, or notification badge) or structural contents.
+* **Exact Error Message Strings:** Rule R5 requires explaining "course full" or "already enrolled", but does not specify whether these exact strings must be used verbatim or if capitalization/punctuation flexibility is permitted.
+* **Atomic Operation Implementation Details:** While a note describing the atomic operation is accepted and database-level implementation is excluded, the precise application-layer isolation level or locking mechanism to guarantee atomicity is unspecified.
 ~~~~
 
 ### B2 — UML drafts (Prompt B)
