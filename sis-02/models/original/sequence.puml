@@ -1,0 +1,56 @@
+@startuml
+autonumber
+actor Student
+participant "CatalogController" as CC
+participant "EnrollmentService" as ES
+database "Database / Repository" as DB
+
+== R1: Catalog Browsing ==
+Student -> CC: browseCatalog()
+activate CC
+CC -> DB: fetchAvailableCourses()
+activate DB
+DB --> CC: return course list
+deactivate DB
+CC --> Student: display catalog
+deactivate CC
+
+== R2: Guarded Success ==
+Student -> ES: requestEnrollment(studentId, courseId)
+activate ES
+note right of ES: Final checks & creation modeled\nas one atomic transaction
+ES -> DB: beginTransaction()
+activate DB
+ES -> DB: checkGuards(studentId, courseId)
+DB --> ES: checks passed (not duplicate, space available)
+ES -> DB: createEnrollmentAndIncrementCount()
+DB --> ES: commitTransaction() successful
+deactivate DB
+ES --> Student: enrollmentConfirmed
+deactivate ES
+
+== R3: Duplicate Outcome ==
+Student -> ES: requestEnrollment(studentId, courseId)
+activate ES
+ES -> DB: beginTransaction()
+activate DB
+ES -> DB: checkGuards(studentId, courseId)
+DB --> ES: validation failed (Already Enrolled)
+ES -> DB: rollbackTransaction()
+deactivate DB
+ES --> Student: error: DuplicateEnrollmentException
+deactivate ES
+
+== R4 & R5: Full-Course Outcome ==
+Student -> ES: requestEnrollment(studentId, courseId)
+activate ES
+ES -> DB: beginTransaction()
+activate DB
+ES -> DB: checkGuards(studentId, courseId)
+DB --> ES: validation failed (Course Full)
+ES -> DB: rollbackTransaction()
+deactivate DB
+ES --> Student: error: CourseCapacityExceededException
+deactivate ES
+
+@enduml

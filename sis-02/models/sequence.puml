@@ -1,0 +1,64 @@
+' SIS #02 — your FINAL sequence diagram goes here, as PlantUML (@startuml … @enduml).
+' Start from the AI's original in models/original/sequence.puml, apply your accepted review
+' decisions, then render it to models/img/sequence.png (or .svg). README section 5.
+@startuml
+autonumber
+actor Student
+participant "CatalogController" as CC
+participant "EnrollmentService" as ES
+database "Database / Repository" as DB
+
+== R1: Catalog Browsing & Offering Selection ==
+Student -> CC: browseCatalog(semester)
+activate CC
+CC -> DB: fetchCourseOfferings(semester)
+activate DB
+DB --> CC: return course offerings list
+deactivate DB
+CC --> Student: display catalog with offerings
+deactivate CC
+
+Student -> CC: selectCourseOffering(offeringId)
+activate CC
+CC --> Student: offering selected
+deactivate CC
+
+== R2, R3, R4, R5: Guarded Registration & Atomic Operation ==
+Student -> ES: requestEnrollment(studentId, offeringId)
+activate ES
+
+note right of ES
+  Final checks & enrollment creation 
+  execute as one atomic transaction.
+end note
+
+ES -> DB: beginTransaction()
+activate DB
+ES -> DB: fetchCurrentOfferingData(offeringId)
+DB --> ES: return current capacity, enrollment count, & student enrollments
+
+note over ES
+  EnrollmentService evaluates duplicate and 
+  current-capacity conditions using repository data.
+end note
+
+alt already enrolled
+    ES -> DB: rollbackTransaction()
+    deactivate DB
+    ES --> Student: reject: "already enrolled" (count unchanged)
+
+else course full
+    ES -> DB: rollbackTransaction()
+    deactivate DB
+    ES --> Student: reject: "course full" (count unchanged)
+
+else not enrolled and places left
+    ES -> DB: createEnrollment(studentId, offeringId)
+    ES -> DB: incrementEnrollmentCount(offeringId)
+    ES -> DB: commitTransaction()
+    deactivate DB
+    ES --> Student: return enrollment confirmation
+end
+
+deactivate ES
+@enduml
