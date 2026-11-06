@@ -10,9 +10,9 @@ import {
   Building2,
   Info,
 } from 'lucide-react';
-import { rooms, initialBookings, type Booking } from '@/lib/roomData';
-import { checkAvailability, formatTime, type Decision } from '@/lib/availability';
-
+import { rooms, initialBookings, type Booking } from './lib/roomData';
+import { checkAvailability, formatTime, type Decision } from './lib/availability';
+import { canBook } from './booking';
 const MAX_DURATION = 120;
 const TIME_STEP = 15;
 
@@ -58,15 +58,36 @@ export default function App() {
   const endMin = inputValueToMinutes(endStr);
 
   const handleCheck = () => {
-    const result = checkAvailability({
-      start: startMin,
-      end: endMin,
-      currentTime,
-      room: selectedRoom,
-      bookings,
-    });
+  const result = checkAvailability({
+    start: startMin,
+    end: endMin,
+    currentTime,
+    room: selectedRoom,
+    bookings,
+  });
+
+  const available = canBook({
+    start: startMin,
+    end: endMin,
+    now: currentTime,
+    blocked: selectedRoom.blocked,
+    bookings: roomBookings.map((booking) => ({
+      start: booking.start,
+      end: booking.end,
+    })),
+  });
+
+  if (available) {
+    setDecision({ status: 'available' });
+  } else if (result.status === 'unavailable') {
     setDecision(result);
-  };
+  } else {
+    setDecision({
+      status: 'unavailable',
+      reasons: ['This time slot is unavailable.'],
+    });
+  }
+};
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
