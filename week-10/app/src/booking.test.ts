@@ -123,6 +123,17 @@ describe('canBook Function Tests', () => {
       blocked: false, bookings: baseBookings,
     })).toBe(true);
   });
+
+  it('R4: rejects NaN start time', () => {
+    expect(canBook({
+      start: NaN,
+      end: 660,
+      now: 540,
+      blocked: false,
+      bookings: [],
+    })).toBe(false);
+  });
+
   it('AC5: bookings array and elements remain unchanged', () => {
     const bookings: Booking[] = [{ start: 600, end: 660 }];
     const originalSnapshot = JSON.stringify(bookings);
