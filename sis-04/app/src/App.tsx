@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react';
 import {
   Clock,
@@ -7,70 +8,81 @@ import {
   XCircle,
   CalendarCheck,
   Lock,
-  Building2,
   Info,
 } from 'lucide-react';
-import { rooms, initialBookings, type Booking } from '@/lib/roomData';
-import { checkAvailability, formatTime, type Decision } from '@/lib/availability';
+import { ROOMS } from './rooms';
+import { filterRooms } from './filter';
+import { checkRoom } from './booking';
 
 const MAX_DURATION = 120;
 const TIME_STEP = 15;
+const CURRENT_TIME_DEFAULT = 600;
 
-function minutesToInputValue(m: number): string {
-  const h = Math.floor(m / 60);
-  const mm = m % 60;
-  return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+function minutesToInputValue(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
 }
 
-function inputValueToMinutes(v: string): number {
-  const [h, m] = v.split(':').map(Number);
-  return h * 60 + m;
+function inputValueToMinutes(value: string): number {
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
 }
 
-const CURRENT_TIME_DEFAULT = 600; // 10:00
+function formatTime(minutes: number): string {
+  return minutesToInputValue(minutes);
+}
 
 export default function App() {
-  const [bookings] = useState<Booking[]>(initialBookings);
-  const [selectedRoomId, setSelectedRoomId] = useState(rooms[0].id);
+  const [selectedRoomId, setSelectedRoomId] = useState(ROOMS[0].id);
   const [startStr, setStartStr] = useState('10:30');
   const [endStr, setEndStr] = useState('11:30');
   const [currentTime, setCurrentTime] = useState(CURRENT_TIME_DEFAULT);
-  const [decision, setDecision] = useState<Decision | null>(null);
+  const [attendees, setAttendees] = useState(1);
+  const [equipment, setEquipment] = useState<string[]>([]);
+  const [decision, setDecision] = useState<boolean | null>(null);
 
   const selectedRoom = useMemo(
-    () => rooms.find((r) => r.id === selectedRoomId)!,
+    () => ROOMS.find((room) => room.id === selectedRoomId) ?? ROOMS[0],
     [selectedRoomId],
   );
 
-  const roomBookings = useMemo(
-    () =>
-      bookings
-        .filter((b) => b.roomId === selectedRoomId)
-        .sort((a, z) => a.start - z.start),
-    [bookings, selectedRoomId],
+  const filteredRooms = useMemo(
+    () => filterRooms(ROOMS, { attendees, equipment }),
+    [attendees, equipment],
   );
 
-  const duration =
-    inputValueToMinutes(endStr) - inputValueToMinutes(startStr);
+  const roomBookings = useMemo(
+    () => [...selectedRoom.bookings].sort((a, b) => a.start - b.start),
+    [selectedRoom],
+  );
 
-  const overLimit = duration > MAX_DURATION;
   const startMin = inputValueToMinutes(startStr);
   const endMin = inputValueToMinutes(endStr);
+  const duration = endMin - startMin;
+  const overLimit = duration > MAX_DURATION;
 
   const handleCheck = () => {
-    const result = checkAvailability({
+    const result = checkRoom(ROOMS, selectedRoomId, {
       start: startMin,
       end: endMin,
-      currentTime,
-      room: selectedRoom,
-      bookings,
+      now: currentTime,
     });
+
     setDecision(result);
+  };
+
+  const toggleEquipment = (item: string) => {
+    setEquipment((current) =>
+      current.includes(item)
+        ? current.filter((value) => value !== item)
+        : [...current, item],
+    );
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
-      {/* Header */}
       <header className="bg-gradient-to-r from-slate-800 to-slate-700 text-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
           <div className="flex items-center gap-3">
@@ -90,65 +102,116 @@ export default function App() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 grid gap-6 lg:grid-cols-5">
-        {/* Left: form */}
         <section className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7">
           <h2 className="text-lg font-semibold mb-5 flex items-center gap-2">
             <Clock className="w-5 h-5 text-teal-600" />
             Booking Request
           </h2>
 
-          {/* Room selection */}
-          <label className="block text-sm font-medium text-slate-600 mb-2">
-            Select Room
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2 mb-5">
-            {rooms.map((room) => {
-              const active = room.id === selectedRoomId;
-              return (
-                <button
-                  key={room.id}
-                  onClick={() => {
-                    setSelectedRoomId(room.id);
-                    setDecision(null);
-                  }}
-                  className={[
-                    'text-left rounded-xl border p-4 transition-all duration-200',
-                    active
-                      ? 'border-teal-500 ring-2 ring-teal-200 bg-teal-50'
-                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50',
-                  ].join(' ')}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold text-slate-800">{room.name}</p>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <Building2 className="w-3 h-3" />
-                        {room.building}
-                      </p>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <Users className="w-3 h-3" />
-                        {room.capacity} seats
-                      </p>
-                    </div>
-                    {room.blocked && (
-                      <span className="flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                        <Lock className="w-3 h-3" />
-                        Blocked
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Time inputs */}
           <div className="grid grid-cols-2 gap-4 mb-5">
             <div>
-              <label
-                htmlFor="start-time"
-                className="block text-sm font-medium text-slate-600 mb-1.5"
-              >
+              <label htmlFor="attendees" className="block text-sm font-medium text-slate-600 mb-1.5">
+                Number of attendees
+              </label>
+              <input
+                id="attendees"
+                type="number"
+                min="1"
+                value={attendees}
+                onChange={(event) => {
+                  setAttendees(Math.max(1, Number(event.target.value)));
+                  setDecision(null);
+                }}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="equipment" className="block text-sm font-medium text-slate-600 mb-1.5">
+                Required equipment
+              </label>
+              <p className="text-xs text-slate-400">
+                Select all that are needed below.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 mb-5">
+            {['projector', 'whiteboard', 'microphone', 'computers'].map((item) => (
+              <label key={item} className="flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={equipment.includes(item)}
+                  onChange={() => {
+                    toggleEquipment(item);
+                    setDecision(null);
+                  }}
+                  className="accent-teal-600"
+                />
+                <span className="capitalize">{item}</span>
+              </label>
+            ))}
+          </div>
+
+          <h3 className="text-sm font-semibold text-slate-700 mb-2">
+            Matching rooms ({filteredRooms.length})
+          </h3>
+
+          {filteredRooms.length === 0 ? (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5">
+              No rooms match the selected capacity and equipment requirements.
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 mb-5">
+              {filteredRooms.map((room) => {
+                const active = room.id === selectedRoomId;
+
+                return (
+                  <button
+                    key={room.id}
+                    onClick={() => {
+                      setSelectedRoomId(room.id);
+                      setDecision(null);
+                    }}
+                    className={[
+                      'text-left rounded-xl border p-4 transition-all duration-200',
+                      active
+                        ? 'border-teal-500 ring-2 ring-teal-200 bg-teal-50'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+                    ].join(' ')}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-slate-800">{room.name}</p>
+                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                          <Users className="w-3 h-3" />
+                          {room.capacity} seats
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1 capitalize">
+                          {room.equipment.join(', ')}
+                        </p>
+                      </div>
+                      {room.blocked && (
+                        <span className="flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                          <Lock className="w-3 h-3" />
+                          Blocked
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {!filteredRooms.some((room) => room.id === selectedRoomId) && (
+            <p className="text-sm text-amber-700 mb-5">
+              The selected room does not match the current filters. Select a matching room to continue.
+            </p>
+          )}
+
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div>
+              <label htmlFor="start-time" className="block text-sm font-medium text-slate-600 mb-1.5">
                 Start Time
               </label>
               <input
@@ -156,18 +219,15 @@ export default function App() {
                 type="time"
                 step={TIME_STEP * 60}
                 value={startStr}
-                onChange={(e) => {
-                  setStartStr(e.target.value);
+                onChange={(event) => {
+                  setStartStr(event.target.value);
                   setDecision(null);
                 }}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 transition"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
               />
             </div>
             <div>
-              <label
-                htmlFor="end-time"
-                className="block text-sm font-medium text-slate-600 mb-1.5"
-              >
+              <label htmlFor="end-time" className="block text-sm font-medium text-slate-600 mb-1.5">
                 End Time
               </label>
               <input
@@ -175,21 +235,17 @@ export default function App() {
                 type="time"
                 step={TIME_STEP * 60}
                 value={endStr}
-                onChange={(e) => {
-                  setEndStr(e.target.value);
+                onChange={(event) => {
+                  setEndStr(event.target.value);
                   setDecision(null);
                 }}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 transition"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
               />
             </div>
           </div>
 
-          {/* Current-time control */}
           <div className="mb-5">
-            <label
-              htmlFor="current-time"
-              className="block text-sm font-medium text-slate-600 mb-1.5"
-            >
+            <label htmlFor="current-time" className="block text-sm font-medium text-slate-600 mb-1.5">
               Current Time (simulated)
             </label>
             <input
@@ -197,11 +253,11 @@ export default function App() {
               type="time"
               step={TIME_STEP * 60}
               value={minutesToInputValue(currentTime)}
-              onChange={(e) => {
-                setCurrentTime(inputValueToMinutes(e.target.value));
+              onChange={(event) => {
+                setCurrentTime(inputValueToMinutes(event.target.value));
                 setDecision(null);
               }}
-              className="w-full sm:w-48 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 transition"
+              className="w-full sm:w-48 rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
             />
             <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
               <Info className="w-3 h-3" />
@@ -209,26 +265,16 @@ export default function App() {
             </p>
           </div>
 
-          {/* Duration indicator */}
           <div className="mb-5">
             <div className="flex items-center justify-between text-sm mb-1.5">
               <span className="font-medium text-slate-600">Duration</span>
-              <span
-                className={
-                  overLimit
-                    ? 'text-red-600 font-semibold'
-                    : 'text-slate-500'
-                }
-              >
+              <span className={overLimit ? 'text-red-600 font-semibold' : 'text-slate-500'}>
                 {duration > 0 ? `${duration} min` : '—'}
               </span>
             </div>
             <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
               <div
-                className={[
-                  'h-full transition-all duration-300',
-                  overLimit ? 'bg-red-500' : 'bg-teal-500',
-                ].join(' ')}
+                className={`h-full transition-all duration-300 ${overLimit ? 'bg-red-500' : 'bg-teal-500'}`}
                 style={{
                   width: `${Math.min(100, (Math.max(0, duration) / MAX_DURATION) * 100)}%`,
                 }}
@@ -241,64 +287,39 @@ export default function App() {
             )}
           </div>
 
-          {/* Check button */}
           <button
             onClick={handleCheck}
-            className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors duration-200 shadow-sm"
+            disabled={!filteredRooms.some((room) => room.id === selectedRoomId)}
+            className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-semibold px-6 py-3 rounded-xl transition-colors duration-200 shadow-sm"
           >
             Check Availability
           </button>
 
-          {/* Decision banner */}
-          {decision && (
-            <div
-              className={[
-                'mt-5 rounded-xl border p-4 transition-all duration-300',
-                decision.status === 'available'
-                  ? 'border-green-300 bg-green-50'
-                  : 'border-red-300 bg-red-50',
-              ].join(' ')}
-            >
+          {decision !== null && (
+            <div className={`mt-5 rounded-xl border p-4 ${decision ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
               <div className="flex items-center gap-2.5 mb-1">
-                {decision.status === 'available' ? (
+                {decision ? (
                   <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
                 ) : (
                   <XCircle className="w-5 h-5 text-red-600 shrink-0" />
                 )}
-                <span
-                  className={[
-                    'font-bold text-base',
-                    decision.status === 'available'
-                      ? 'text-green-700'
-                      : 'text-red-700',
-                  ].join(' ')}
-                >
-                  {decision.status === 'available'
-                    ? 'Available'
-                    : 'Unavailable'}
+                <span className={`font-bold text-base ${decision ? 'text-green-700' : 'text-red-700'}`}>
+                  {decision ? 'Available' : 'Unavailable'}
                 </span>
               </div>
-              {decision.status === 'unavailable' && (
-                <ul className="mt-1.5 space-y-1 pl-7">
-                  {decision.reasons.map((r, i) => (
-                    <li key={i} className="text-sm text-red-600 list-disc">
-                      {r}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {decision.status === 'available' && (
+              {decision ? (
                 <p className="text-sm text-green-700 pl-7">
-                  {selectedRoom.name} is free from {formatTime(startMin)} to{' '}
-                  {formatTime(endMin)}. No existing bookings overlap this
-                  interval.
+                  {selectedRoom.name} is free from {formatTime(startMin)} to {formatTime(endMin)}.
+                </p>
+              ) : (
+                <p className="text-sm text-red-700 pl-7">
+                  This room cannot be booked for the selected time. Check the time, duration, room status, and existing bookings.
                 </p>
               )}
             </div>
           )}
         </section>
 
-        {/* Right: existing bookings */}
         <aside className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7">
           <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-teal-600" />
@@ -314,16 +335,13 @@ export default function App() {
             </p>
           ) : (
             <ul className="space-y-2.5">
-              {roomBookings.map((b) => (
-                <li
-                  key={b.id}
-                  className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5"
-                >
+              {roomBookings.map((booking) => (
+                <li key={booking.id} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
                   <div className="bg-teal-50 text-teal-700 rounded-md px-2 py-1 text-xs font-mono font-semibold whitespace-nowrap">
-                    {formatTime(b.start)}–{formatTime(b.end)}
+                    {formatTime(booking.start)}–{formatTime(booking.end)}
                   </div>
                   <span className="text-sm text-slate-600 truncate">
-                    {b.title}
+                    {booking.title}
                   </span>
                 </li>
               ))}
