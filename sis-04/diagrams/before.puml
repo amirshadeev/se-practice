@@ -1,0 +1,21 @@
+﻿@startuml
+title SIS-04 - Architecture Before Refactoring
+
+component "App.tsx" as App
+component "roomData.ts" as RoomData
+component "availability.ts" as Availability
+
+App --> RoomData : rooms, initialBookings
+App --> Availability : checkAvailability(), formatTime()
+
+note right of App
+  UI and booking-related
+  responsibilities are coupled
+end note
+
+note bottom of Availability
+  Contains booking availability
+  validation logic
+end note
+
+@enduml
