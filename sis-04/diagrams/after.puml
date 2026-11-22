@@ -1,0 +1,32 @@
+﻿@startuml
+title SIS-04 - Architecture After Refactoring
+
+component "App.tsx" as App
+component "rooms.ts" as Rooms
+component "filter.ts" as Filter
+component "booking.ts" as Booking
+component "booking.test.ts" as BookingTests
+component "filter.test.ts" as FilterTests
+
+App --> Rooms : ROOMS, Room
+App --> Filter : filterRooms()
+App --> Booking : checkRoom()
+Filter --> Rooms : Room
+Booking --> Rooms : Room, Booking
+BookingTests --> Booking : canBook(), checkRoom()
+BookingTests --> Filter : filterRooms()
+BookingTests --> Rooms : ROOMS
+FilterTests --> Filter : filterRooms()
+FilterTests --> Rooms : ROOMS
+
+note right of App
+  UI handles user interaction
+  and displays availability
+end note
+
+note bottom of Booking
+  canBook() contains shared
+  booking validation rules
+end note
+
+@enduml
